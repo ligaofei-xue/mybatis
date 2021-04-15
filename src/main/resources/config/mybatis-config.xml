@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <!--这个加到下面会报错，有顺序-->
+    <properties></properties>
+
+    <!--下划线自动映射驼峰字段 默认是false，改成true，数据库有下划线会自动改成大写，例如数据库cover_img,实体类coverImg即可
+    方法一：select cover_img as coverImg from video 多字段怎么办 改为true即可-->
+    <settings>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+    </settings>
+
+    <!--可以配置很多个environments，这边是development开发环境-->
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
+                <property name="url" value="jdbc:mysql://127.0.0.1:3306/xdtest?useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;serverTimezone=UTC"/>
+                <property name="username" value="root"/>
+                <property name="password" value="11001100"/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <!--一个表对应一个mapper文件-->
+    <mappers>
+        <mapper resource="mapper/VideoMapper.xml"/>
+    </mappers>
+
+</configuration>

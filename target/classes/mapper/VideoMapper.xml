@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+namespace: 名称空间，一般需要保持全局唯一， 最好是和dao层的java接口一致，
+可以映射 sql语句 到对应的方法名称和参数、返回类型
+
+mybatis是使用接口动态代理
+-->
+<mapper namespace="com.ligaofei.dao.VideoMapper">
+    <!--
+     statement sql
+     id： 当前mapper下需要唯一
+     resultType : sql查询结果集的封装
+
+     多数情况不加是正常使用，但是如果出现报错：无效的列类型，则是缺少jdbcType;
+        只有当字段可为NULL时才需要jdbcType属性
+     -->
+    <select id="selectById" resultType="com.ligaofei.domain.Video">
+        select * from video where id = #{video_id,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectListByXML" resultType="com.ligaofei.domain.Video">
+        select * from video
+    </select>
+
+    <select id="selectByPointAndTitleLike" resultType="com.ligaofei.domain.Video">
+        select * from video where point=#{point,jdbcType=DOUBLE} and title like concat('%', #{title,jdbcType=VARCHAR},'%')
+    </select>
+
+    <!--获得插入的自增主键 useGeneratedKeys="true" keyProperty="id" keyColumn="id"-->
+    <insert id="add" parameterType="com.ligaofei.domain.Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id" >
+        INSERT INTO `video` ( `title`, `summary`, `cover_img`, `price`, `create_time`, `point`)
+        VALUES
+        (#{title,jdbcType=VARCHAR},#{summary,jdbcType=VARCHAR},#{coverImg,jdbcType=VARCHAR},#{price,jdbcType=INTEGER},
+         #{createTime,jdbcType=TIMESTAMP},#{point,jdbcType=DOUBLE});
+    </insert>
+
+    <!--批量插入 separator分隔符-->
+    <insert id="addBatch" parameterType="com.ligaofei.domain.Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id" >
+
+        INSERT INTO `video` ( `title`, `summary`, `cover_img`, `price`, `create_time`, `point`)
+        VALUES
+
+        <foreach collection="list" item="video" separator=",">
+            (#{video.title,jdbcType=VARCHAR},#{video.summary,jdbcType=VARCHAR},#{video.coverImg,jdbcType=VARCHAR},
+            #{video.price,jdbcType=INTEGER},
+            #{video.createTime,jdbcType=TIMESTAMP},#{video.point,jdbcType=DOUBLE})
+        </foreach>
+
+    </insert>
+</mapper>
