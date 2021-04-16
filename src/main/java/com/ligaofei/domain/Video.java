@@ -1,12 +1,14 @@
 package com.ligaofei.domain;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * 小滴课堂
+ *
  * 视频类
  */
-public class Video {
+public class Video implements Serializable {
 
     /**
      * 主键
@@ -44,7 +46,7 @@ public class Video {
     /**
      * 评分
      */
-    private double point;
+    private Double point;
 
 
     public String getSummary() {
@@ -79,11 +81,11 @@ public class Video {
         this.createTime = createTime;
     }
 
-    public double getPoint() {
+    public Double getPoint() {
         return point;
     }
 
-    public void setPoint(double point) {
+    public void setPoint(Double point) {
         this.point = point;
     }
 

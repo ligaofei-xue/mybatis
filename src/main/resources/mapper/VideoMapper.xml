@@ -9,28 +9,48 @@ namespace: 名称空间，一般需要保持全局唯一， 最好是和dao层�
 mybatis是使用接口动态代理
 -->
 <mapper namespace="com.ligaofei.dao.VideoMapper">
+    <!--Sql片段使用 自定制要查询的字段，并可以复用-->
+    <sql id="base_video_field">
+        id,title,summary,cover_img
+    </sql>
+
+    <!--开启mapper的namespace下的二级缓存，要注意mybatis-config设置全局总开关是开启的才生效-->
+    <!--
+        eviction:代表的是缓存回收策略，常见下面两种。
+        (1) LRU,最近最少使用的，一处最长时间不用的对象
+        (2) FIFO,先进先出，按对象进入缓存的顺序来移除他们
+        flushInterval:刷新间隔时间，单位为毫秒，这里配置的是100秒刷新，如果不配置它，当SQL被执行的时候才会去刷新缓存。
+        size:引用数目，代表缓存最多可以存储多少个对象，设置过大会导致内存溢出
+        readOnly:只读，缓存数据只能读取而不能修改，默认值是false
+    -->
+    <cache eviction="LRU" flushInterval="100000" readOnly="true" size="1024"/>
+
     <!--
      statement sql
      id： 当前mapper下需要唯一
      resultType : sql查询结果集的封装
 
+     不使用缓存，可以配置 useCache="false"
+
      多数情况不加是正常使用，但是如果出现报错：无效的列类型，则是缺少jdbcType;
         只有当字段可为NULL时才需要jdbcType属性
+        <include refid="base_video_field"/> sql片段的使用
      -->
-    <select id="selectById" resultType="com.ligaofei.domain.Video">
-        select * from video where id = #{video_id,jdbcType=INTEGER}
+    <!--<select id="selectById" resultType="com.ligaofei.domain.Video">-->
+    <select id="selectById" parameterType="java.lang.Integer" resultType="Video" useCache="false">
+        select <include refid="base_video_field"/> from video where id = #{video_id,jdbcType=INTEGER}
     </select>
 
-    <select id="selectListByXML" resultType="com.ligaofei.domain.Video">
+    <select id="selectListByXML" resultType="Video">
         select * from video
     </select>
 
-    <select id="selectByPointAndTitleLike" resultType="com.ligaofei.domain.Video">
+    <select id="selectByPointAndTitleLike" resultType="Video">
         select * from video where point=#{point,jdbcType=DOUBLE} and title like concat('%', #{title,jdbcType=VARCHAR},'%')
     </select>
 
     <!--获得插入的自增主键 useGeneratedKeys="true" keyProperty="id" keyColumn="id"-->
-    <insert id="add" parameterType="com.ligaofei.domain.Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id" >
+    <insert id="add" parameterType="Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id" >
         INSERT INTO `video` ( `title`, `summary`, `cover_img`, `price`, `create_time`, `point`)
         VALUES
         (#{title,jdbcType=VARCHAR},#{summary,jdbcType=VARCHAR},#{coverImg,jdbcType=VARCHAR},#{price,jdbcType=INTEGER},
@@ -38,7 +58,7 @@ mybatis是使用接口动态代理
     </insert>
 
     <!--批量插入 separator分隔符 批量插入要获取自增id, 可以按照单条记录获得自增id的方式，一般不常用-->
-    <insert id="addBatch" parameterType="com.ligaofei.domain.Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id" >
+    <insert id="addBatch" parameterType="Video" useGeneratedKeys="true" keyProperty="id" keyColumn="id" >
 
         INSERT INTO `video` ( `title`, `summary`, `cover_img`, `price`, `create_time`, `point`)
         VALUES
@@ -50,4 +70,71 @@ mybatis是使用接口动态代理
         </foreach>
 
     </insert>
+
+    <!--存在其他不想被更新的字段却置为null或者默认值了-->
+    <update id="updateVideo" parameterType="Video">
+        update video
+        set
+            title = #{title,jdbcType=VARCHAR},
+            summary = #{summary,jdbcType=VARCHAR},
+            cover_img = #{coverImg,jdbcType=VARCHAR},
+            price = #{price,jdbcType=INTEGER},
+            create_time = #{createTime,jdbcType=TIMESTAMP},
+            point = #{point,jdbcType=DOUBLE}
+        where
+            id = #{id}
+    </update>
+
+    <!--动态字段更新 if test 标签使用-->
+    <update id="updateVideoSelective" parameterType="Video">
+        update video
+        <trim prefix="set" suffixOverrides=",">
+
+            <if test="title != null "> title = #{title,jdbcType=VARCHAR},</if>
+
+            <if test="summary != null "> summary = #{summary,jdbcType=VARCHAR},</if>
+
+            <if test="coverImg != null "> cover_img = #{coverImg,jdbcType=VARCHAR},</if>
+
+            <if test="price != 0 "> price = #{price,jdbcType=INTEGER},</if>
+
+            <if test="createTime !=null "> create_time = #{createTime,jdbcType=TIMESTAMP},</if>
+
+            <!--惨痛教训,一定要看pojo类里面的是基本数据类型，还是包装数据类型，基本数据类型int，double需要判断！=0包装类型才有null的判断-->
+            <if test="point != null "> point = #{point,jdbcType=DOUBLE},</if>
+
+        </trim>
+
+        where
+        id = #{id}
+    </update>
+
+    <!--delete删除语法 由于MyBatis的sql写在XML里面， 有些sql的语法符号和xml里面的冲突
+            大于等于 <![CDATA[ >= ]]>
+            小于等于 <![CDATA[ <= ]]>
+    -->
+    <!--<delete id="deleteByCreateTimeAndPrice" parameterType="java.util.Map">-->
+    <delete id="deleteByCreateTimeAndPrice" parameterType="Map">
+        delete from video where create_time <![CDATA[ > ]]> #{createTime} and price <![CDATA[ >= ]]> #{price}
+    </delete>
+
+
+
+    <!--需要自定义字段，或者多表查询，一对多等关系，比resultType更强大,适合复杂查询-->
+    <resultMap id="VideoResultMap" type="Video">
+        <!--
+        id 指定查询列的唯一标示
+        column 数据库字段的名称
+        property pojo类的名称
+        注意column="video_tile" 下面要写as。column="cover_img" 下面则不用
+        -->
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="video_tile" property="title"  jdbcType="VARCHAR" />
+        <result column="summary" property="summary"  jdbcType="VARCHAR" />
+        <result column="cover_img"  property="coverImg"  jdbcType="VARCHAR" />
+    </resultMap>
+
+    <select id="selectBaseFieldByIdWithResultMap" resultMap="VideoResultMap">
+        select id , title as video_tile, summary, cover_img from video where id = #{video_id}
+    </select>
 </mapper>

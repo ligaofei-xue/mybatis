@@ -2,6 +2,22 @@
 <!DOCTYPE configuration
         PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!--dom节点顺序要求，不然报错
+官方文档：https://mybatis.org/mybatis-3/zh/configuration.html#
+    configuration（配置）
+    properties（属性）
+    settings（设置）
+    typeAliases（类型别名）
+    typeHandlers（类型处理器）
+    objectFactory（对象工厂）
+    plugins（插件，少用）
+    environments（环境配置，不配多环境，基本在Spring里面配置）
+    environment（环境变量）
+    transactionManager（事务管理器）
+    dataSource（数据源）
+    databaseIdProvider（数据库厂商标识）
+    mappers（映射器）
+-->
 <configuration>
     <!--这个加到下面会报错，有顺序-->
     <properties></properties>
@@ -10,7 +26,22 @@
     方法一：select cover_img as coverImg from video 多字段怎么办 改为true即可-->
     <settings>
         <setting name="mapUnderscoreToCamelCase" value="true"/>
+
+        <!--这个配置使全局的映射器(二级缓存)启用或禁用缓存，全局总开关，这里关闭，mapper中开启了也没用-->
+        <setting name="cacheEnabled" value="true" />
+
+        <!--延迟加载总开关-->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <!--将aggressiveLazyLoading设置为false表示按需加载，默认为true-->
+        <setting name="aggressiveLazyLoading" value="false"/>
     </settings>
+
+    <!--类型别名,类型别名，给类取个别名，mapper.xml可以不用输入类的全限定名，可以指定某一个，也可以指定某一个包全部的，默认是类名
+            本身就内置很多别名，比如Integer、String、List、Map 等-->
+    <typeAliases>
+        <!--<typeAlias type="com.ligaofei.domain.Video" alias="Video"/>-->
+        <package name="com.ligaofei.domain"/>
+    </typeAliases>
 
     <!--可以配置很多个environments，这边是development开发环境-->
     <environments default="development">
@@ -25,9 +56,10 @@
         </environment>
     </environments>
 
-    <!--一个表对应一个mapper文件-->
+    <!--映射器 一个表对应一个mapper文件-->
     <mappers>
         <mapper resource="mapper/VideoMapper.xml"/>
+        <mapper resource="mapper/VideoOrderMapper.xml"/>
     </mappers>
 
 </configuration>

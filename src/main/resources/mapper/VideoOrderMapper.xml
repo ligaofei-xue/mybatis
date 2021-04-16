@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ligaofei.dao.VideoOrderMapper">
+
+    <!--
+       id 指定查询列的唯一标示
+       column 数据库字段的名称
+       property pojo类的名称
+       -->
+    <resultMap id="VideoOrderResultMap" type="VideoOrder">
+        <id column="id" property="id"/>
+
+        <result column="user_id" property="userId"/>
+        <result column="out_trade_no" property="outTradeNo"/>
+        <result column="create_time" property="createTime"/>
+        <result column="state" property="state"/>
+        <result column="total_fee" property="totalFee"/>
+        <result column="video_id" property="videoId"/>
+        <result column="video_title" property="videoTitle"/>
+        <result column="video_img" property="videoImg"/>
+        <!--
+        一对一查询结果映射之 association 配置属性一对一
+         property 对应videoOrder里面的user属性名
+         javType 这个属性的类型
+         -->
+        <association property="user" javaType="User">
+            <id property="id"  column="user_id"/>
+            <result property="name" column="name"/>
+            <result property="headImg" column="head_img"/>
+            <result property="createTime" column="create_time"/>
+            <result property="phone" column="phone"/>
+        </association>
+
+    </resultMap>
+
+    <!--一对一管理查询订单， 订单内部包含用户属性-->
+    <select id="queryVideoOrderList" resultMap="VideoOrderResultMap">
+
+        select
+
+         o.id id,
+         o.user_id ,
+         o.out_trade_no,
+         o.create_time,
+         o.state,
+         o.total_fee,
+         o.video_id,
+         o.video_title,
+         o.video_img,
+         u.name,
+         u.head_img,
+         u.create_time,
+         u.phone
+         from video_order o left join user u on o.user_id = u.id
+
+    </select>
+
+
+    <resultMap id="UserOrderResultMap" type="User">
+
+        <id property="id"  column="id"/>
+        <result property="name" column="name"/>
+        <result property="headImg" column="head_img"/>
+        <result property="createTime" column="create_time"/>
+        <result property="phone" column="phone"/>
+
+        <!--
+        一对多查询结果映射之collection
+            property 填写pojo类中集合类属性的名称
+            ofType 集合里面的pojo对象
+        -->
+        <collection property="videoOrderList" ofType="VideoOrder">
+
+            <!--配置主键，管理order的唯一标识-->
+            <id column="order_id" property="id"/>
+            <result column="user_id" property="userId"/>
+            <result column="out_trade_no" property="outTradeNo"/>
+            <result column="create_time" property="createTime"/>
+            <result column="state" property="state"/>
+            <result column="total_fee" property="totalFee"/>
+            <result column="video_id" property="videoId"/>
+            <result column="video_title" property="videoTitle"/>
+            <result column="video_img" property="videoImg"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryUserOrder" resultMap="UserOrderResultMap">
+        select
+            u.id,
+            u.name,
+            u.head_img,
+            u.create_time,
+            u.phone,
+            o.id order_id,
+            o.out_trade_no,
+            o.user_id,
+            o.create_time,
+            o.state,
+            o.total_fee,
+            o.video_id,
+            o.video_title,
+            o.video_img
+        from user u left join video_order o on u.id = o.user_id
+
+    </select>
+
+
+
+
+
+    <!--测试懒加载-->
+
+    <resultMap id="VideoOrderResultMapLazy" type="VideoOrder">
+        <id column="id" property="id"/>
+
+        <result column="user_id" property="userId"/>
+        <result column="out_trade_no" property="outTradeNo"/>
+        <result column="create_time" property="createTime"/>
+        <result column="state" property="state"/>
+        <result column="total_fee" property="totalFee"/>
+        <result column="video_id" property="videoId"/>
+        <result column="video_title" property="videoTitle"/>
+        <result column="video_img" property="videoImg"/>
+
+        <!--column="user_id"是findUserByUserId的ID
+        select： 指定延迟加载需要执行的statement id
+        column： 和select查询关联的字段
+         -->
+        <association property="user" javaType="User" column="user_id" select="findUserByUserId"/>
+
+
+    </resultMap>
+
+    <!--一对一管理查询订单， 订单内部包含用户属性  懒加载-->
+    <select id="queryVideoOrderListLazy" resultMap="VideoOrderResultMapLazy">
+
+        select
+            o.id id,
+            o.user_id ,
+            o.out_trade_no,
+            o.create_time,
+            o.state,
+            o.total_fee,
+            o.video_id,
+            o.video_title,
+            o.video_img
+        from video_order o
+
+    </select>
+
+
+    <select id="findUserByUserId" resultType="User">
+
+        select  * from user where id=#{id}
+
+    </select>
+
+</mapper>
